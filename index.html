@@ -21,8 +21,6 @@
 <link rel="preload" as="image" href="btn-pressed.png">
 <link rel="preload" as="image" href="btn-success.png">
 <link rel="preload" as="image" href="btn-error.png">
-
-
 <style>
 
 
@@ -97,6 +95,22 @@ animation: pulse 1.5s infinite ease-in-out;
 50%  { transform: translateX(-50%) scale(1.08); opacity: 0.85;}
 100% { transform: translateX(-50%) scale(1);    opacity: 1;   }
 }
+.restart-btn {
+  display: block;
+  margin: 18px auto 0;
+  width: 80%;
+  max-width: 320px;
+  padding: 15px 20px;
+  border: none;
+  border-radius: 30px;
+  background-color: #ff6b6b;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+}
+
 </style>
 </head>
 <body>
@@ -182,111 +196,104 @@ animation: pulse 1.5s infinite ease-in-out;
 <button class="messenger-btn" data-messenger="МАХ">МАХ</button>
 </div>
 <button id="submit-btn">ОСТАВИТЬ ЗАЯВКУ</button>
+<button class="restart-btn" id="restart-btn">ПРОЙТИ ЗАНОВО</button>
 </div>
 </div>
 
+</div>
+</div>
 
-</div>
-</div>
 <script>
 /* ===== ПРЕДЗАГРУЗКА КАРТИНОК В КЭШ ===== */
 (function() {
-var imagesToPreload = [
-'preview-thumb1.png',
-'london-bg.png',
-'corgi-shock.png',
-'corgi-strange.png',
-'corgi-freddie.png',
-'btn-default.png',
-'btn-pressed.png',
-'btn-success.png',
-'btn-error.png'
-];
-imagesToPreload.forEach(function(src) {
-var img = new Image();
-img.src = src;
-});
+  var imagesToPreload = [
+    'preview-thumb1.png','london-bg.png','corgi-shock.png','corgi-strange.png',
+    'corgi-freddie.png','btn-default.png','btn-pressed.png','btn-success.png','btn-error.png'
+  ];
+  imagesToPreload.forEach(function(src) { var img = new Image(); img.src = src; });
 })();
-
 
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxQiSBhiH3Wmy4s6sLZp32CjW6l_2ZwtzzRC5vwHfwfRz0-qsXHE7qo9sYAvSBV388MEQ/exec";
 
-
 function playSound(id) {
-var s = document.getElementById(id);
-if (!s) return;
-s.currentTime = 0;
-s.play().catch(function(){});
+  var s = document.getElementById(id);
+  if (!s) return;
+  s.currentTime = 0;
+  s.play().catch(function(){});
 }
-
 
 var PROGRESS_PERCENTS = [0, 33, 67, 100];
 
-
 function setProgressOnEnter(step) {
-var map = {1:'screen-1', 2:'screen-2', 3:'screen-3'};
-var screen = document.getElementById(map[step]);
-if (!screen) return;
-var fill = screen.querySelector('.progress-fill');
-var labels = screen.querySelectorAll('.progress-label span');
-var percent = PROGRESS_PERCENTS[step - 1];
-if (fill) { fill.style.transition = 'none'; fill.style.width = percent + '%'; }
-if (labels[1]) labels[1].textContent = percent + '%';
+  var map = {1:'screen-1', 2:'screen-2', 3:'screen-3'};
+  var screen = document.getElementById(map[step]);
+  if (!screen) return;
+  var fill = screen.querySelector('.progress-fill');
+  var labels = screen.querySelectorAll('.progress-label span');
+  var percent = PROGRESS_PERCENTS[step - 1];
+  if (fill) { fill.style.transition = 'none'; fill.style.width = percent + '%'; }
+  if (labels[1]) labels[1].textContent = percent + '%';
 }
-
 
 function fillProgressOnAnswer(step) {
-var map = {1:'screen-1', 2:'screen-2', 3:'screen-3'};
-var screen = document.getElementById(map[step]);
-if (!screen) return;
-var fill = screen.querySelector('.progress-fill');
-var labels = screen.querySelectorAll('.progress-label span');
-var percent = PROGRESS_PERCENTS[step];
-if (fill) {
-fill.style.transition = 'width 0.5s cubic-bezier(0.4,0,0.2,1)';
-requestAnimationFrame(function() { fill.style.width = percent + '%'; });
-}
-if (labels[1]) labels[1].textContent = percent + '%';
+  var map = {1:'screen-1', 2:'screen-2', 3:'screen-3'};
+  var screen = document.getElementById(map[step]);
+  if (!screen) return;
+  var fill = screen.querySelector('.progress-fill');
+  var labels = screen.querySelectorAll('.progress-label span');
+  var percent = PROGRESS_PERCENTS[step];
+  if (fill) {
+    fill.style.transition = 'width 0.5s cubic-bezier(0.4,0,0.2,1)';
+    requestAnimationFrame(function() { fill.style.width = percent + '%'; });
+  }
+  if (labels[1]) labels[1].textContent = percent + '%';
 }
 
+/* ===== СБРОС КОНКРЕТНОГО ВОПРОСА (при возврате назад) ===== */
+function resetQuestion(grid) {
+  if (!grid) return;
+  grid.classList.remove('locked');
+  grid.querySelectorAll('.btn-item').forEach(function(b) {
+    b.classList.remove('correct', 'wrong', 'pressed');
+  });
+}
 
 function initPhoneMask(selector) {
-var inp = document.querySelector(selector);
-if (!inp) return;
-function formatPhone(digits) {
-var d = digits, result = '7 (';
-if (d.length === 0) return '7 (';
-result += d.substring(0, 3);
-if (d.length >= 3) result += ') ';
-result += d.substring(3, 6);
-if (d.length >= 6) result += '-';
-result += d.substring(6, 8);
-if (d.length >= 8) result += '-';
-result += d.substring(8, 10);
-return result;
-}
-inp.addEventListener('keydown', function(e) {
-if (e.key === 'Backspace') {
-e.preventDefault();
-var raw = inp.value.replace(/\D/g, '');
-var digits = raw.length > 1 ? raw.substring(1) : '';
-if (digits.length === 0) { inp.value = ''; return; }
-digits = digits.substring(0, digits.length - 1);
-inp.value = digits.length === 0 ? '' : formatPhone(digits);
-}
-});
-inp.addEventListener('input', function() {
-var raw = inp.value.replace(/\D/g, '');
-if (raw.length === 0) { inp.value = ''; return; }
-if (raw[0] === '7' || raw[0] === '8') raw = raw.substring(1);
-raw = raw.substring(0, 10);
-inp.value = formatPhone(raw);
-});
-inp.addEventListener('touchstart', function(e) { e.stopPropagation(); }, { passive: true });
-inp.addEventListener('touchend',   function(e) { e.stopPropagation(); }, { passive: true });
+  var inp = document.querySelector(selector);
+  if (!inp) return;
+  function formatPhone(digits) {
+    var d = digits, result = '7 (';
+    if (d.length === 0) return '7 (';
+    result += d.substring(0, 3);
+    if (d.length >= 3) result += ') ';
+    result += d.substring(3, 6);
+    if (d.length >= 6) result += '-';
+    result += d.substring(6, 8);
+    if (d.length >= 8) result += '-';
+    result += d.substring(8, 10);
+    return result;
+  }
+  inp.addEventListener('keydown', function(e) {
+    if (e.key === 'Backspace') {
+      e.preventDefault();
+      var raw = inp.value.replace(/\D/g, '');
+      var digits = raw.length > 1 ? raw.substring(1) : '';
+      if (digits.length === 0) { inp.value = ''; return; }
+      digits = digits.substring(0, digits.length - 1);
+      inp.value = digits.length === 0 ? '' : formatPhone(digits);
+    }
+  });
+  inp.addEventListener('input', function() {
+    var raw = inp.value.replace(/\D/g, '');
+    if (raw.length === 0) { inp.value = ''; return; }
+    if (raw[0] === '7' || raw[0] === '8') raw = raw.substring(1);
+    raw = raw.substring(0, 10);
+    inp.value = formatPhone(raw);
+  });
+  inp.addEventListener('touchstart', function(e) { e.stopPropagation(); }, { passive: true });
+  inp.addEventListener('touchend',   function(e) { e.stopPropagation(); }, { passive: true });
 }
 initPhoneMask('#user-phone');
-
 
 const SWIPE_THRESHOLD = 50;
 const carousel = document.getElementById('carousel');
@@ -299,8 +306,7 @@ let isDragging = false;
 let score = 0;
 let selectedMessenger = '';
 
-
-/* ===== Экран 0: preview (картинка с плашкой) -> первый вопрос ===== */
+/* ===== Экран 0: preview -> первый вопрос ===== */
 var previewScreen = document.getElementById('screen-preview');
 function goToQuiz() { playSound('sound-click'); goTo(1); }
 previewScreen.addEventListener('click', goToQuiz);
@@ -309,190 +315,209 @@ previewScreen.addEventListener('touchstart', function(e) { e.stopPropagation(); 
 previewScreen.addEventListener('mousedown', function(e) { e.stopPropagation(); });
 previewScreen.addEventListener('mouseup',   function(e) { e.stopPropagation(); });
 
-
 function goTo(index) {
-if (index < 0) index = 0;
-if (index >= totalScreens) index = totalScreens - 1;
-current = index;
+  if (index < 0) index = 0;
+  if (index >= totalScreens) index = totalScreens - 1;
+  current = index;
 
+  if (current >= 1 && current <= 3) {
+    setProgressOnEnter(current);
+  }
 
-if (current >= 1 && current <= 3) {
-setProgressOnEnter(current);
+  if (current === 4) {
+    var label = '';
+    if      (score === 3) label = 'Потрясающе! Вы настоящий знаток!';
+    else if (score === 2) label = 'Так держать!';
+    else if (score === 1) label = 'Неплохо, но есть куда расти!';
+    else                  label = 'Попробуйте ещё раз!';
+    document.getElementById('result-text').innerHTML =
+      label + '<br>Ваш результат:<br>' + score + ' из 3 баллов';
+    resetForm();
+  }
+
+  carousel.style.transform = "translateX(-" + (current * (100 / totalScreens)) + "%)";
 }
 
-
-if (current === 4) {
-var label = '';
-if      (score === 3) label = 'Потрясающе! Вы настоящий знаток!';
-else if (score === 2) label = 'Так держать!';
-else if (score === 1) label = 'Неплохо, но есть куда расти!';
-else                  label = 'Попробуйте ещё раз!';
-document.getElementById('result-text').innerHTML =
-label + '<br>Ваш результат:<br>' + score + ' из 3 баллов';
-resetForm();
+/* ===== ПОЛНЫЙ СБРОС КВИЗА (кнопка "Пройти заново") ===== */
+function restartQuiz() {
+  score = 0;
+  document.querySelectorAll('.buttons-grid').forEach(function(grid) {
+    resetQuestion(grid);
+  });
+  // сброс прогресс-баров
+  [1,2,3].forEach(function(step) { setProgressOnEnter(step); });
+  goTo(0);
 }
-
-
-carousel.style.transform = "translateX(-" + (current * (100 / totalScreens)) + "%)";
-}
-
 
 function resetForm() {
-document.getElementById('user-name').value  = '';
-document.getElementById('user-email').value = '';
-document.getElementById('user-phone').value = '';
-['user-name','user-email','user-phone'].forEach(function(id) {
-document.getElementById(id).style.borderColor = 'rgba(255,255,255,0.35)';
-});
-selectedMessenger = '';
-document.querySelectorAll('.messenger-btn').forEach(function(b) { b.classList.remove('selected'); });
-var btn = document.getElementById('submit-btn');
-btn.textContent = 'ОСТАВИТЬ ЗАЯВКУ';
-btn.disabled = false;
+  document.getElementById('user-name').value  = '';
+  document.getElementById('user-email').value = '';
+  document.getElementById('user-phone').value = '';
+  ['user-name','user-email','user-phone'].forEach(function(id) {
+    document.getElementById(id).style.borderColor = 'rgba(255,255,255,0.35)';
+  });
+  selectedMessenger = '';
+  document.querySelectorAll('.messenger-btn').forEach(function(b) { b.classList.remove('selected'); });
+  var btn = document.getElementById('submit-btn');
+  btn.textContent = 'ОСТАВИТЬ ЗАЯВКУ';
+  btn.disabled = false;
 }
-
 
 document.querySelectorAll('.messenger-btn').forEach(function(btn) {
-btn.addEventListener('click', function() {
-document.querySelectorAll('.messenger-btn').forEach(function(b) { b.classList.remove('selected'); });
-btn.classList.add('selected');
-selectedMessenger = btn.getAttribute('data-messenger');
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.messenger-btn').forEach(function(b) { b.classList.remove('selected'); });
+    btn.classList.add('selected');
+    selectedMessenger = btn.getAttribute('data-messenger');
+  });
+  btn.addEventListener('touchstart', function(e) { e.stopPropagation(); }, { passive: true });
+  btn.addEventListener('touchend',   function(e) { e.stopPropagation(); }, { passive: true });
 });
-btn.addEventListener('touchstart', function(e) { e.stopPropagation(); }, { passive: true });
-btn.addEventListener('touchend',   function(e) { e.stopPropagation(); }, { passive: true });
-});
-
 
 function highlightError(el) {
-el.style.borderColor = '#ff6b6b';
-setTimeout(function() { el.style.borderColor = 'rgba(255,255,255,0.35)'; }, 1500);
+  el.style.borderColor = '#ff6b6b';
+  setTimeout(function() { el.style.borderColor = 'rgba(255,255,255,0.35)'; }, 1500);
 }
-
 
 document.getElementById('submit-btn').addEventListener('click', function() {
-var submitBtn = document.getElementById('submit-btn');
-var nameInp   = document.getElementById('user-name');
-var emailInp  = document.getElementById('user-email');
-var phoneInp  = document.getElementById('user-phone');
-var name  = nameInp.value.trim();
-var email = emailInp.value.trim();
-var phone = phoneInp.value.trim();
-var hasError = false;
-if (!name)  { highlightError(nameInp);  hasError = true; }
-if (!email) { highlightError(emailInp); hasError = true; }
-if (!phone || phone.replace(/\D/g,'').length < 11) { highlightError(phoneInp); hasError = true; }
-if (hasError) return;
-submitBtn.textContent = 'Отправка...';
-submitBtn.disabled = true;
-var formData = new FormData();
-formData.append('name', name);
-formData.append('email', email);
-formData.append('phone', phone);
-formData.append('messenger', selectedMessenger || 'не выбран');
-formData.append('score', score + ' из 3');
-fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: formData })
-.then(function()  { submitBtn.textContent = 'Спасибо! В ближайшее время мы свяжемся с Вами!'; })
-.catch(function() { submitBtn.textContent = 'Спасибо! В ближайшее время мы свяжемся с Вами!'; });
+  var submitBtn = document.getElementById('submit-btn');
+  var nameInp   = document.getElementById('user-name');
+  var emailInp  = document.getElementById('user-email');
+  var phoneInp  = document.getElementById('user-phone');
+  var name  = nameInp.value.trim();
+  var email = emailInp.value.trim();
+  var phone = phoneInp.value.trim();
+  var hasError = false;
+  if (!name)  { highlightError(nameInp);  hasError = true; }
+  if (!email) { highlightError(emailInp); hasError = true; }
+  if (!phone || phone.replace(/\D/g,'').length < 11) { highlightError(phoneInp); hasError = true; }
+  if (hasError) return;
+  submitBtn.textContent = 'Отправка...';
+  submitBtn.disabled = true;
+  var formData = new FormData();
+  formData.append('name', name);
+  formData.append('email', email);
+  formData.append('phone', phone);
+  formData.append('messenger', selectedMessenger || 'не выбран');
+  formData.append('score', score + ' из 3');
+  fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: formData })
+    .then(function()  { submitBtn.textContent = 'Спасибо! В ближайшее время мы свяжемся с Вами!'; })
+    .catch(function() { submitBtn.textContent = 'Спасибо! В ближайшее время мы свяжемся с Вами!'; });
 });
-
 
 ['user-name','user-email','user-phone','submit-btn'].forEach(function(id) {
-var el = document.getElementById(id);
-el.addEventListener('touchstart', function(e) { e.stopPropagation(); }, { passive: true });
-el.addEventListener('touchend',   function(e) { e.stopPropagation(); }, { passive: true });
+  var el = document.getElementById(id);
+  el.addEventListener('touchstart', function(e) { e.stopPropagation(); }, { passive: true });
+  el.addEventListener('touchend',   function(e) { e.stopPropagation(); }, { passive: true });
 });
 
-
-function handleAnswer(btn) {
-if (btn.classList.contains('wrong') || btn.classList.contains('correct')) return;
-var answer = btn.getAttribute('data-answer');
-var grid = btn.closest('.buttons-grid');
-var correctAnswer = grid.getAttribute('data-correct');
-var nextScreen = parseInt(grid.getAttribute('data-next'));
-var step = parseInt(grid.getAttribute('data-step'));
-grid.classList.add('locked');
-btn.classList.remove('pressed');
-if (answer === correctAnswer) { score++; btn.classList.add('correct'); playSound('sound-correct'); }
-else { btn.classList.add('wrong'); playSound('sound-wrong'); }
-fillProgressOnAnswer(step);
-setTimeout(function() { goTo(nextScreen); }, 800);
+/* ===== Кнопка "ПРОЙТИ ЗАНОВО" ===== */
+var restartBtn = document.getElementById('restart-btn');
+if (restartBtn) {
+  restartBtn.addEventListener('click', function(e) { e.stopPropagation(); playSound('sound-click'); restartQuiz(); });
+  restartBtn.addEventListener('touchend', function(e) { e.stopPropagation(); playSound('sound-click'); restartQuiz(); }, { passive: true });
+  restartBtn.addEventListener('touchstart', function(e) { e.stopPropagation(); }, { passive: true });
 }
 
+function handleAnswer(btn) {
+  if (btn.classList.contains('wrong') || btn.classList.contains('correct')) return;
+  var answer = btn.getAttribute('data-answer');
+  var grid = btn.closest('.buttons-grid');
+  var correctAnswer = grid.getAttribute('data-correct');
+  var nextScreen = parseInt(grid.getAttribute('data-next'));
+  var step = parseInt(grid.getAttribute('data-step'));
+  grid.classList.add('locked');
+  btn.classList.remove('pressed');
+  if (answer === correctAnswer) { score++; btn.classList.add('correct'); playSound('sound-correct'); }
+  else { btn.classList.add('wrong'); playSound('sound-wrong'); }
+  fillProgressOnAnswer(step);
+  setTimeout(function() { goTo(nextScreen); }, 800);
+}
 
 document.querySelectorAll('.btn-item').forEach(function(btn) {
-btn.addEventListener('touchstart', function()  { btn.classList.add('pressed'); }, { passive: true });
-btn.addEventListener('touchcancel', function() { btn.classList.remove('pressed'); }, { passive: true });
-btn.addEventListener('touchend', function(e) {
-btn.classList.remove('pressed');
-if (moved) return;
-var t = e.changedTouches[0];
-if (Math.abs(t.clientX - startX) > 10 || Math.abs(t.clientY - startY) > 10) return;
-e.stopPropagation();
-handleAnswer(btn);
-}, { passive: true });
-btn.addEventListener('mousedown',  function() { btn.classList.add('pressed'); });
-btn.addEventListener('mouseleave', function() { btn.classList.remove('pressed'); });
-btn.addEventListener('mouseup', function() {
-btn.classList.remove('pressed');
-if (moved) return;
-handleAnswer(btn);
-});
+  btn.addEventListener('touchstart', function()  { btn.classList.add('pressed'); }, { passive: true });
+  btn.addEventListener('touchcancel', function() { btn.classList.remove('pressed'); }, { passive: true });
+  btn.addEventListener('touchend', function(e) {
+    btn.classList.remove('pressed');
+    if (moved) return;
+    var t = e.changedTouches[0];
+    if (Math.abs(t.clientX - startX) > 10 || Math.abs(t.clientY - startY) > 10) return;
+    e.stopPropagation();
+    handleAnswer(btn);
+  }, { passive: true });
+  btn.addEventListener('mousedown',  function() { btn.classList.add('pressed'); });
+  btn.addEventListener('mouseleave', function() { btn.classList.remove('pressed'); });
+  btn.addEventListener('mouseup', function() {
+    btn.classList.remove('pressed');
+    if (moved) return;
+    handleAnswer(btn);
+  });
 });
 
+/* ===== СВАЙП НАЗАД (с экрана 2-5 на предыдущий, со сбросом) ===== */
+function swipeBack() {
+  if (current < 1) return;            // на preview не уходим
+  var prev = current - 1;
+  if (prev < 1) return;               // не возвращаемся на preview (экран 0)
+  // сбрасываем вопрос, на который возвращаемся (если он был отвечён)
+  var map = {1:'screen-1', 2:'screen-2', 3:'screen-3'};
+  var prevScreen = document.getElementById(map[prev]);
+  if (prevScreen) {
+    var grid = prevScreen.querySelector('.buttons-grid');
+    if (grid && grid.classList.contains('locked')) {
+      if (grid.querySelector('.btn-item.correct')) {
+        score = Math.max(0, score - 1);  // откатываем балл
+      }
+    }
+    resetQuestion(grid);
+  }
+  goTo(prev);
+}
 
 carousel.addEventListener('touchstart', function(e) {
-if (current === 0) return;
-startX = e.touches[0].clientX;
-startY = e.touches[0].clientY;
-moved = false;
-isDragging = true;
+  if (current === 0) return;
+  startX = e.touches[0].clientX;
+  startY = e.touches[0].clientY;
+  moved = false;
+  isDragging = true;
 }, { passive: true });
-
 
 carousel.addEventListener('touchmove', function(e) {
-if (!isDragging) return;
-var dx = Math.abs(e.touches[0].clientX - startX);
-var dy = Math.abs(e.touches[0].clientY - startY);
-if (dx > 5 || dy > 5) moved = true;
+  if (!isDragging) return;
+  var dx = Math.abs(e.touches[0].clientX - startX);
+  var dy = Math.abs(e.touches[0].clientY - startY);
+  if (dx > 5 || dy > 5) moved = true;
 }, { passive: true });
-
 
 carousel.addEventListener('touchend', function(e) {
-if (!isDragging) return;
-if (e.target.closest('.btn-item')) return;
-isDragging = false;
-if (current === 0) return;
-var dx = startX - e.changedTouches[0].clientX;
-var dy = startY - e.changedTouches[0].clientY;
-if (Math.abs(dx) > Math.abs(dy) && dx > SWIPE_THRESHOLD) { moved = true; goTo(current + 1); }
+  if (!isDragging) return;
+  isDragging = false;
+  if (current === 0) return;
+  var dx = startX - e.changedTouches[0].clientX;
+  var dy = startY - e.changedTouches[0].clientY;
+  if (Math.abs(dx) > Math.abs(dy)) {
+    // свайп ВПРАВО (палец влево->вправо) = назад
+    if (dx < -SWIPE_THRESHOLD && !e.target.closest('.btn-item')) { moved = true; swipeBack(); }
+  }
 }, { passive: true });
 
-
 carousel.addEventListener('mousedown', function(e) {
-if (current === 0) return;
-startX = e.clientX;
-startY = e.clientY;
-moved = false;
-isDragging = true;
+  if (current === 0) return;
+  startX = e.clientX;
+  startY = e.clientY;
+  moved = false;
+  isDragging = true;
 });
-
 
 carousel.addEventListener('mouseup', function(e) {
-if (!isDragging) return;
-if (e.target.closest('.btn-item')) return;
-isDragging = false;
-if (current === 0) return;
-var dx = startX - e.clientX;
-var dy = startY - e.clientY;
-if (Math.abs(dx) > Math.abs(dy) && dx > SWIPE_THRESHOLD) { moved = true; goTo(current + 1); }
+  if (!isDragging) return;
+  isDragging = false;
+  if (current === 0) return;
+  var dx = startX - e.clientX;
+  var dy = startY - e.clientY;
+  if (Math.abs(dx) > Math.abs(dy)) {
+    if (dx < -SWIPE_THRESHOLD && !e.target.closest('.btn-item')) { moved = true; swipeBack(); }
+  }
 });
-
-
-window.addEventListener('keydown', function(e) {
-if (current === 0) return;
-if (e.key === 'ArrowRight') goTo(current + 1);
-});
-
 
 goTo(0);
 </script>
