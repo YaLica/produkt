@@ -10,6 +10,18 @@
 <meta property="og:type"         content="website" />
 <meta name="twitter:card"        content="summary_large_image" />
 
+<!-- Yandex.Metrika counter -->
+<script type="text/javascript">
+   (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+   m[i].l=1*new Date();
+   for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+   k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+   (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+   ym(110497953, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true, webvisor:true });
+</script>
+<noscript><div><img src="https://mc.yandex.ru/watch/110497953" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+<!-- /Yandex.Metrika counter -->
+
 <!-- ===== ПРЕДЗАГРУЗКА ВИДЕО ===== -->
 <link rel="preload" as="video" href="intro.mp4" type="video/mp4">
 
@@ -25,8 +37,6 @@
 <link rel="preload" as="image" href="btn-success.png">
 <link rel="preload" as="image" href="btn-error.png">
 <style>
-
-
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { width: 100%; height: 100%; overflow: hidden; touch-action: none; background-color: #000; }
 @media (min-width: 600px) and (pointer: fine) {
@@ -92,8 +102,6 @@ white-space: nowrap;
 z-index: 10;
 animation: pulse 1.5s infinite ease-in-out;
 }
-
-
 @keyframes pulse {
 0%   { transform: translateX(-50%) scale(1);    opacity: 1;   }
 50%  { transform: translateX(-50%) scale(1.08); opacity: 0.85;}
@@ -117,37 +125,30 @@ animation: pulse 1.5s infinite ease-in-out;
   cursor: pointer;
   box-sizing: border-box;
 }
-
 </style>
 </head>
 <body>
-
 
 <audio id="sound-click"   src="click.mp3"   preload="auto"></audio>
 <audio id="sound-correct" src="correct.mp3" preload="auto"></audio>
 <audio id="sound-wrong"   src="wrong.mp3"   preload="auto"></audio>
 
-
 <div class="phone-frame">
 <div class="carousel" id="carousel">
-
 
 <div class="screen" id="screen-start">
 <img class="bg-image" src="preview-thumb2.png" alt="start">
 <div class="pulse-badge">ДАЛЕЕ</div>
 </div>
 
-
 <div class="screen" id="screen-video">
 <video id="intro-video" class="bg-video" src="intro.mp4" playsinline preload="auto"></video>
 </div>
-
 
 <div class="screen" id="screen-preview">
 <img class="bg-image" src="preview-thumb1.png" alt="preview">
 <div class="pulse-badge">ПРОВЕРИТЬ СВОЙ УРОВЕНЬ</div>
 </div>
-
 
 <div class="screen" id="screen-1">
 <img class="bg-image" src="london-bg.png" alt="">
@@ -165,7 +166,6 @@ animation: pulse 1.5s infinite ease-in-out;
 </div>
 </div>
 
-
 <div class="screen" id="screen-2">
 <img class="bg-image" src="london-bg.png" alt="">
 <div class="progress-wrap">
@@ -182,7 +182,6 @@ animation: pulse 1.5s infinite ease-in-out;
 </div>
 </div>
 
-
 <div class="screen" id="screen-3">
 <img class="bg-image" src="london-bg.png" alt="">
 <div class="progress-wrap">
@@ -198,7 +197,6 @@ animation: pulse 1.5s infinite ease-in-out;
 <button class="btn-item" data-answer="4">'m wanting</button>
 </div>
 </div>
-
 
 <div class="screen" id="screen-results">
 <img class="bg-image" src="london-bg.png" alt="">
@@ -222,6 +220,11 @@ animation: pulse 1.5s infinite ease-in-out;
 </div>
 
 <script>
+/* ===== МЕТРИКА: отправка событий ===== */
+function ymGoal(name) {
+  if (typeof ym === 'function') { ym(110497953, 'reachGoal', name); }
+}
+
 /* ===== ПРЕДЗАГРУЗКА КАРТИНОК В КЭШ ===== */
 (function() {
   var imagesToPreload = [
@@ -248,7 +251,6 @@ function playSound(id) {
 
 var PROGRESS_PERCENTS = [0, 33, 67, 100];
 
-/* === Прогресс-бары: step 3->screen-1, 4->screen-2, 5->screen-3 === */
 function setProgressOnEnter(step) {
   var map = {3:'screen-1', 4:'screen-2', 5:'screen-3'};
   var screen = document.getElementById(map[step]);
@@ -274,7 +276,6 @@ function fillProgressOnAnswer(step) {
   if (labels[1]) labels[1].textContent = percent + '%';
 }
 
-/* ===== СБРОС КОНКРЕТНОГО ВОПРОСА (при возврате назад) ===== */
 function resetQuestion(grid) {
   if (!grid) return;
   grid.classList.remove('locked');
@@ -331,20 +332,8 @@ let isDragging = false;
 let score = 0;
 let selectedMessenger = '';
 
-/* ============================================================
-   СХЕМА ЭКРАНОВ:
-   0 = СТАРТ preview-thumb2.png + плашка "ДАЛЕЕ" (тап -> видео со звуком)
-   1 = ВИДЕО (старт со звуком, авто-переход на превью 2)
-   2 = ПРЕВЬЮ preview-thumb1.png + плашка "ПРОВЕРИТЬ СВОЙ УРОВЕНЬ"
-   3 = вопрос 1
-   4 = вопрос 2
-   5 = вопрос 3
-   6 = результаты
-   ============================================================ */
-
 var introVideo = document.getElementById('intro-video');
 
-/* запуск видео со звуком (после жеста на стартовом экране) */
 function playIntroVideo() {
   if (!introVideo) { goTo(2); return; }
   introVideo.currentTime = 0;
@@ -373,12 +362,11 @@ if (introVideo) {
   }, { passive: true });
 }
 
-/* ===== ЭКРАН 0: СТАРТ + плашка "ДАЛЕЕ" -> видео (1)
-со звуком ===== */
 var startScreen = document.getElementById('screen-start');
 function goToVideo() {
+  ymGoal('start_click');
   goTo(1);
-  playIntroVideo();   // жест получен -> звук разрешён
+  playIntroVideo();
 }
 if (startScreen) {
   startScreen.addEventListener('click', goToVideo);
@@ -388,9 +376,8 @@ if (startScreen) {
   startScreen.addEventListener('mouseup',   function(e) { e.stopPropagation(); });
 }
 
-/* ===== ЭКРАН 2: ПРЕВЬЮ + плашка -> вопрос 1 (3) ===== */
 var previewScreen = document.getElementById('screen-preview');
-function goToQuiz() { playSound('sound-click'); goTo(3); }
+function goToQuiz() { ymGoal('quiz_start'); playSound('sound-click'); goTo(3); }
 if (previewScreen) {
   previewScreen.addEventListener('click', goToQuiz);
   previewScreen.addEventListener('touchend', function(e) { e.stopPropagation(); goToQuiz(); }, { passive: true });
@@ -417,12 +404,12 @@ function goTo(index) {
     document.getElementById('result-text').innerHTML =
       label + '<br>Ваш результат:<br>' + score + ' из 3 баллов';
     resetForm();
+    ymGoal('quiz_finish');
   }
 
   carousel.style.transform = "translateX(-" + (current * (100 / totalScreens)) + "%)";
 }
 
-/* ===== ПОЛНЫЙ СБРОС КВИЗА (кнопка "Пройти заново") -> на превью (2) ===== */
 function restartQuiz() {
   score = 0;
   document.querySelectorAll('.buttons-grid').forEach(function(grid) {
@@ -483,8 +470,8 @@ document.getElementById('submit-btn').addEventListener('click', function() {
   formData.append('messenger', selectedMessenger || 'не выбран');
   formData.append('score', score + ' из 3');
   fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: formData })
-    .then(function()  { submitBtn.textContent = 'Спасибо! В ближайшее время мы свяжемся с Вами!'; })
-    .catch(function() { submitBtn.textContent = 'Спасибо! В ближайшее время мы свяжемся с Вами!'; });
+    .then(function()  { ymGoal('form_submit'); submitBtn.textContent = 'Спасибо! В ближайшее время мы свяжемся с Вами!'; })
+    .catch(function() { ymGoal('form_submit'); submitBtn.textContent = 'Спасибо! В ближайшее время мы свяжемся с Вами!'; });
 });
 
 ['user-name','user-email','user-phone','submit-btn'].forEach(function(id) {
@@ -493,7 +480,6 @@ document.getElementById('submit-btn').addEventListener('click', function() {
   el.addEventListener('touchend',   function(e) { e.stopPropagation(); }, { passive: true });
 });
 
-/* ===== Кнопка "ПРОЙТИ ЗАНОВО" ===== */
 var restartBtn = document.getElementById('restart-btn');
 if (restartBtn) {
   restartBtn.addEventListener('click', function(e) { e.stopPropagation(); playSound('sound-click'); restartQuiz(); });
@@ -512,6 +498,7 @@ function handleAnswer(btn) {
   btn.classList.remove('pressed');
   if (answer === correctAnswer) { score++; btn.classList.add('correct'); playSound('sound-correct'); }
   else { btn.classList.add('wrong'); playSound('sound-wrong'); }
+  ymGoal('q' + (step - 2) + '_answer');
   fillProgressOnAnswer(step);
   setTimeout(function() { goTo(nextScreen); }, 800);
 }
@@ -536,10 +523,9 @@ document.querySelectorAll('.btn-item').forEach(function(btn) {
   });
 });
 
-/* ===== СВАЙП НАЗАД (только между вопросами, со сбросом) ===== */
 function swipeBack() {
   var prev = current - 1;
-  if (prev < 3) return;   // не возвращаемся на превью(2), видео(1), старт(0)
+  if (prev < 3) return;
   var map = {3:'screen-1', 4:'screen-2', 5:'screen-3'};
   var prevScreen = document.getElementById(map[prev]);
   if (prevScreen) {
@@ -599,7 +585,6 @@ carousel.addEventListener('mouseup', function(e) {
   }
 });
 
-/* ===== СТАРТ: показываем экран "ДАЛЕЕ" (экран 0), видео ждёт жеста ===== */
 goTo(0);
 </script>
 </body>
