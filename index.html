@@ -71,6 +71,7 @@ body { display: flex; align-items: center; justify-content: center; background: 
 .form-input { width: 100%; max-width: 100%; height: 46px; background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.35); border-radius: 12px; padding: 0 16px; color: #fff; font-size: 16px; font-family: system-ui, -apple-system, sans-serif; outline: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; -webkit-appearance: none; appearance: none; box-sizing: border-box; }
 .form-input::placeholder { color: rgba(255,255,255,0.45); }
 .form-input:focus { border-color: rgba(217,138,65,0.85); }
+.hp-field { position: absolute !important; left: -9999px !important; top: -9999px !important; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .messenger-label { color: rgba(255,255,255,0.75); font-family: system-ui, -apple-system, sans-serif; font-size: 13px; font-weight: 500; text-align: center; margin-bottom: -2px; }
 .messenger-row { display: flex; gap: 8px; }
 .messenger-btn { flex: 1; height: 42px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.3); border-radius: 12px; color: #fff; font-size: 13px; font-weight: 600; font-family: system-ui, -apple-system, sans-serif; cursor: pointer; outline: none; -webkit-tap-highlight-color: transparent; touch-action: manipulation; transition: background 0.15s, border-color 0.15s; user-select: none; -webkit-user-select: none; box-sizing: border-box; }
@@ -205,6 +206,8 @@ animation: pulse 1.5s infinite ease-in-out;
 <input class="form-input" type="text" id="user-name" placeholder="Ваше имя" autocomplete="off">
 <input class="form-input" type="email" id="user-email" placeholder="Ваш e-mail" autocomplete="off">
 <input class="form-input" type="tel" id="user-phone" placeholder="7 (900) 000-00-00" autocomplete="off">
+<!-- 🍯 HONEYPOT: живой человек это поле не видит и не заполняет -->
+<input class="hp-field" type="text" id="user-website" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
 <p class="messenger-label">Выберите месседжер для общения</p>
 <div class="messenger-row">
 <button class="messenger-btn" data-messenger="WhatsApp">WhatsApp</button>
@@ -240,7 +243,10 @@ function ymGoal(name) {
   if (v) { v.preload = 'auto'; v.load(); }
 })();
 
+/* ===== ЗАЩИТА ===== */
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxQiSBhiH3Wmy4s6sLZp32CjW6l_2ZwtzzRC5vwHfwfRz0-qsXHE7qo9sYAvSBV388MEQ/exec";
+const SECURITY_TOKEN = "corgi_7Kx92mQp";   // 👈 ТОТ ЖЕ токен, что в Apps Script!
+var pageLoadTime = Date.now();             // для защиты от слишком быстрой отправки
 
 function playSound(id) {
   var s = document.getElementById(id);
@@ -316,7 +322,7 @@ function initPhoneMask(selector) {
     raw = raw.substring(0, 10);
     inp.value = formatPhone(raw);
   });
-  inp.addEventListener('touchstart', function(e) { e.stopPropagation(); }, { passive: true });
+    inp.addEventListener('touchstart', function(e) { e.stopPropagation(); }, { passive: true });
   inp.addEventListener('touchend',   function(e) { e.stopPropagation(); }, { passive: true });
 }
 initPhoneMask('#user-phone');
@@ -423,6 +429,8 @@ function resetForm() {
   document.getElementById('user-name').value  = '';
   document.getElementById('user-email').value = '';
   document.getElementById('user-phone').value = '';
+  var hp = document.getElementById('user-website');
+  if (hp) hp.value = '';
   ['user-name','user-email','user-phone'].forEach(function(id) {
     document.getElementById(id).style.borderColor = 'rgba(255,255,255,0.35)';
   });
@@ -453,6 +461,22 @@ document.getElementById('submit-btn').addEventListener('click', function() {
   var nameInp   = document.getElementById('user-name');
   var emailInp  = document.getElementById('user-email');
   var phoneInp  = document.getElementById('user-phone');
+  var hpInp     = document.getElementById('user-website');
+
+  /* 🍯 HONEYPOT: если скрытое поле заполнено — это бот. Делаем вид, что всё ок, но не отправляем. */
+  if (hpInp && hpInp.value !== '') {
+    submitBtn.textContent = 'Спасибо! В ближайшее время мы свяжемся с Вами!';
+    submitBtn.disabled = true;
+    return;
+  }
+
+  /* ⏱️ ЗАЩИТА ОТ БОТОВ: слишком быстрая отправка (меньше 3 сек с загрузки) — почти наверняка бот. */
+  if (Date.now() - pageLoadTime < 3000) {
+    submitBtn.textContent = 'Спасибо! В ближайшее время мы свяжемся с Вами!';
+    submitBtn.disabled = true;
+    return;
+  }
+
   var name  = nameInp.value.trim();
   var email = emailInp.value.trim();
   var phone = phoneInp.value.trim();
@@ -469,6 +493,7 @@ document.getElementById('submit-btn').addEventListener('click', function() {
   formData.append('phone', phone);
   formData.append('messenger', selectedMessenger || 'не выбран');
   formData.append('score', score + ' из 3');
+  formData.append('token', SECURITY_TOKEN);   /* 🔒 секретный токен */
   fetch(GOOGLE_SCRIPT_URL, { method: 'POST', body: formData })
     .then(function()  { ymGoal('form_submit'); submitBtn.textContent = 'Спасибо! В ближайшее время мы свяжемся с Вами!'; })
     .catch(function() { ymGoal('form_submit'); submitBtn.textContent = 'Спасибо! В ближайшее время мы свяжемся с Вами!'; });
